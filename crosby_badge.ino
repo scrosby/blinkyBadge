@@ -82,6 +82,12 @@ public:
       (color+i)->set(r,g,b);    
     }
   }
+  void clearRow(int row, int r, int g, int b) {
+    isChanged = true;
+    for (int i = 0 ; i < LED_COUNT ; i++) {
+      cell(row,i)->set(r,g,b);    
+    }
+  }
 
   void set(int x, int y, int r, int g, int b) {
     isChanged = true;
@@ -162,18 +168,34 @@ public:
     nowDown = nowDown2;
   }
 
+  // milliseconds.
+  const int CLICK = 200; // Less than this.
+  const int SHORT_PRESS = 500; // Less than this.
+  const int MEDIUM_PRESS = 2000; // Less than this.
+
+  boolean inShortPress() {
+    return nowDown && durationDown > CLICK && durationDown < SHORT_PRESS;
+  }
+
+boolean inMediumPress() {
+      return nowDown && durationDown > SHORT_PRESS && durationDown < MEDIUM_PRESS;
+}
+boolean inLongPress() {
+    return nowDown && durationDown > MEDIUM_PRESS;
+}
+
   boolean wasClick() {
-    return justCameUp && durationDown < 200;
+    return justCameUp && durationDown < CLICK;
   }
 
   boolean wasShortPress() {
-    return justCameUp && durationDown > 200 && durationDown < 500;
+    return justCameUp && durationDown > CLICK && durationDown < SHORT_PRESS;
   }
 boolean wasMediumPress() {
-    return justCameUp && durationDown > 500 && durationDown < 2000;
+    return justCameUp && durationDown > SHORT_PRESS && durationDown < MEDIUM_PRESS;
 }
 boolean wasLongPress() {
-  return justCameUp && durationDown > 2000;
+  return justCameUp && durationDown > MEDIUM_PRESS;
 }
   
 
@@ -325,8 +347,8 @@ public:
     this->wrap = wrap;
     this->set(currentVal);
   }
-  void set(uint8_t currentVal) {
-    this->currentVal = currentVal<<8 + 128;
+  void set(uint8_t newVal) {
+    this->currentVal = ((int)(newVal))<<8 + 128;
   }
 
   // delta is a fixedpoint with 8 fractional bits.
@@ -357,8 +379,17 @@ public:
     brightness.set(board.brightness);
     };
   virtual void loop() {
-    //board.setBits(0,board.brightness,255,255,255);
-    brightness.accountForDelta(accel.dy*64);
+    board.clear(0,0,0);
+    board.setBits(0,board.brightness,255,255,255);
+    board.setBits(1,0xf,255,0,0);
+    board.setBits(2,0xf,0,255,0);
+    board.setBits(3,0xf,0,0,255);
+    board.setBits(4,0xff,255,255,255);
+    board.setBits(5,0xff,255,255,255);
+    board.setBits(6,0xff,255,255,255);
+    board.setBits(7,0xff,255,255,255);
+    if (abs(accel.dy*8)>12)
+       brightness.accountForDelta(accel.dy*16);
     board.setBrightness(brightness.value());
   }
 };
@@ -370,13 +401,17 @@ class PickColor : public Demo {
 public:
   virtual void setup() {};
   virtual void loop() {
-    //board.setBits(0,board.brightness,255,255,255);
-    gSlider.accountForDelta(accel.dx*64);
-    bSlider.accountForDelta(accel.dy*64);
+    if (abs(accel.dx*8)>12) // Give a dead zone.
+    gSlider.accountForDelta(accel.dx*8);
+    if (abs(accel.dy*8)>12) // Give a dead zone.
+    bSlider.accountForDelta(accel.dy*8);
     int b = bSlider.value();
     int g = gSlider.value();
     int r = max(0,256-g-b);
     board.clear(r,g,b);
+    board.clearRow(0,64,64,64);
+    board.clearRow(1,64,64,64);
+    board.clearRow(2,64,64,64);
     board.setBits(0,r,255,0,0);
     board.setBits(1,g,0,255,0);
     board.setBits(2,b,0,0,255);
@@ -390,7 +425,9 @@ public:
   OrientationDemo demo1;
   PickBrightness demo2;
   PickColor demo3;
-  Demo *demos[] = {&demo1, &demo2, &demo3};
+  Demo *demos[] = {&demo1, 
+  &demo2, 
+  &demo3};
   int demo_size = sizeof(demos)/sizeof(*demos);
 
 class DemoPicker {
@@ -399,19 +436,32 @@ public:
 void setup() {
     for (int i = 0 ; i < demo_size ; i++)
       demos[i]->setup();
-    demos[current].activate();
+    demos[current]->activate();
   }
   void loop() {
-     if (button.wasMediumPress()) {
-     demos[current].activate();
-     current++;
-     demos[current].deactivate();
+     if (button.inMediumPress()) {
+      // TODO: SHould have functionality to save state and restor.
+      board.clear(millis(),0,0);
+      return;
      }
+      board.clear(0,millis(),0);
+
+     if (button.wasMediumPress()) {
+     demos[current]->deactivate();
+      Serial.print("Switch Demo\r\n");
+      Serial.flush();
+     current++;
+     
      if (current == demo_size)
        current = 0;    
-     demos[current]->loop();
-  }
+     demos[current]->activate();
+     }
+          demos[current]->loop();
+
+     }
 };
+
+
 
   
 //  PickBrightness pickBrightness = PickBrightness();
@@ -442,7 +492,6 @@ void loop() {
   const uint32_t now = millis();
   accel.loop();
   button.loop();
-  picker.loop();
   if (false) {
      orientationDemo.loop();
      pickBrightness.loop();
@@ -450,5 +499,5 @@ void loop() {
   picker.loop();
   }
   board.draw(false);
-  delay(20);
+  delay(10);
 }
