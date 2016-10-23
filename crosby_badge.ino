@@ -143,6 +143,7 @@ public:
   // If this is true, you can get durationDown.
   boolean justCameUp = false;
   uint32_t whenDown;
+  // Updated when down until it just came up. then Latched until next press.
   uint32_t durationDown;
   void setup () {
     pinMode(BUTTON, INPUT_PULLUP);
@@ -155,11 +156,26 @@ public:
       whenDown = millis();
     }
     justCameUp = nowDown && !nowDown2;
-    if (justCameUp) {
+    if (nowDown2 || justCameUp) {
       durationDown = millis()-whenDown;
     }
     nowDown = nowDown2;
   }
+
+  boolean wasClick() {
+    return justCameUp && durationDown < 200;
+  }
+
+  boolean wasShortPress() {
+    return justCameUp && durationDown > 200 && durationDown < 500;
+  }
+boolean wasMediumPress() {
+    return justCameUp && durationDown > 500 && durationDown < 2000;
+}
+boolean wasLongPress() {
+  return justCameUp && durationDown > 2000;
+}
+  
 
 private:
   boolean isNowDown2() {
@@ -330,22 +346,45 @@ public:
 
 
 class PickBrightness : public Demo {
-  Slider brightness = Slider(1,255,board.brightness,false);
+  Slider brightness = Slider(2,255,board.brightness,false);
 public:
   virtual void setup() {};
   virtual void loop() {
-    //board.setBits(0,board.brightness,255,255,255);
+    board.setBits(0,board.brightness,255,255,255);
     brightness.accountForDelta(accel.dy*64);
     board.setBrightness(brightness.value());
   }
-
-  
 };
 
+//class Demos {
+  OrientationDemo demo1;
+  PickBrightness demo2;
+  Demo *demos[] = {&demo1, &demo2};
+  int demo_size = sizeof(demos)/sizeof(*demos);
 
+class DemoPicker {
+  int current = 0;
+public:
+void setup() {
+    for (int i = 0 ; i < demo_size ; i++)
+      demos[i]->setup();
+  }
+  void loop() {
+     if (button.wasMediumPress())
+     current++;
+     if (current == demo_size)
+       current = 0;    
+     demos[current]->loop();
+  }
+};
+
+  
+//  PickBrightness pickBrightness = PickBrightness();
+//};
+
+DemoPicker picker;
 
 OrientationDemo orientationDemo = OrientationDemo();
-PickBrightness pickBrightness = PickBrightness();
 void setup() {
   // put your setup code here, to run once:
   //WiFi.persistent(false);
@@ -359,14 +398,16 @@ void setup() {
   button.setup();
   accel.setup();
   board.setBrightness(64);
+  picker.setup();
+  orientationDemo.setup();
 }
 
 void loop() {
   const uint32_t now = millis();
   accel.loop();
   button.loop();
-  orientationDemo.loop();
-  pickBrightness.loop();
+  picker.loop();
+  //orientationDemo.loop();
   board.draw(false);
   delay(20);
 }
