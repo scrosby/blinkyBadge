@@ -368,21 +368,3 @@ void loop() {
   board.draw(false);
   delay(20);
 }
-/*
-  void loopTEMP() {
-  
-  const uint32_t now = millis();
-
-  // only draw the LEDs at 30Hz
-  if (!do_draw && now - last_draw_millis < 30)
-  return;
-  last_draw_millis = now;
-  
-  if (draw_video)
-  pixels.draw(badge.matrix);
-  else
-  demo->draw(badge.matrix);
-
-  badge.matrix.show();
-  }
-*/
