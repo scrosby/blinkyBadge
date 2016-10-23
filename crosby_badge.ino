@@ -350,16 +350,40 @@ class PickBrightness : public Demo {
 public:
   virtual void setup() {};
   virtual void loop() {
-    board.setBits(0,board.brightness,255,255,255);
+    //board.setBits(0,board.brightness,255,255,255);
     brightness.accountForDelta(accel.dy*64);
     board.setBrightness(brightness.value());
   }
 };
 
-//class Demos {
+
+class PickColor : public Demo {
+  Slider gSlider = Slider(1,255,85,false);
+  Slider bSlider = Slider(1,255,85,false);
+public:
+  virtual void setup() {};
+  virtual void loop() {
+    //board.setBits(0,board.brightness,255,255,255);
+    gSlider.accountForDelta(accel.dx*64);
+    bSlider.accountForDelta(accel.dy*64);
+    int b = bSlider.value();
+    int g = gSlider.value();
+    int r = max(0,256-g-b);
+    board.clear(r,g,b);
+    board.setBits(0,r,255,0,0);
+    board.setBits(1,g,0,255,0);
+    board.setBits(2,b,0,0,255);
+    board.setBits(3,0b11110000,255,255,255);
+    board.setBits(3,0b11110000,r,g,b);
+    
+
+  }
+};
+
   OrientationDemo demo1;
   PickBrightness demo2;
-  Demo *demos[] = {&demo1, &demo2};
+  PickColor demo3;
+  Demo *demos[] = {&demo1, &demo2, &demo3};
   int demo_size = sizeof(demos)/sizeof(*demos);
 
 class DemoPicker {
@@ -385,6 +409,8 @@ void setup() {
 DemoPicker picker;
 
 OrientationDemo orientationDemo = OrientationDemo();
+PickBrightness pickBrightness = PickBrightness();
+
 void setup() {
   // put your setup code here, to run once:
   //WiFi.persistent(false);
@@ -398,8 +424,7 @@ void setup() {
   button.setup();
   accel.setup();
   board.setBrightness(64);
-  picker.setup();
-  orientationDemo.setup();
+  picker.setup();  
 }
 
 void loop() {
@@ -407,7 +432,12 @@ void loop() {
   accel.loop();
   button.loop();
   picker.loop();
-  //orientationDemo.loop();
+  if (false) {
+     orientationDemo.loop();
+     pickBrightness.loop();
+  } else {
+  picker.loop();
+  }
   board.draw(false);
   delay(20);
 }
