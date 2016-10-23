@@ -169,20 +169,20 @@ private:
   
 };
 
-#define ACCEL_EMWA (1<<1)
+#define ACCEL_EMWA (1<<4)
 
 class AccelRaw {
   float x, y, z;
-  void update(x,y,z) {
+  void update(float x,float y,float z) {
     this->x = x;
     this->y = y;
     this->z = z;
   }
-}
+};
   class AccelEMWA {
-    const float ACCEL_EMWA = (1<<4);
+    //const float ACCEL_EMWA = (1<<4);
     float x, y, z;
-    void update(x,y,z) {
+    void update(float x,float y,float z) {
       emwa(this->x,x);
       emwa(this->y,y);
       emwa(this->z,z);
@@ -221,9 +221,9 @@ public:
   // Invoke each iteration.
   void loop() {
     chip.getXYZ(ax,ay,az);
-    ex=emwa(ex,ax);
-    ey=emwa(ey,ay);
-    ez=emwa(ez,az);
+    emwa(ex,ax);
+    emwa(ey,ay);
+    emwa(ez,az);
     accel = sqrt(ex*ex+ey*ey+ez*ez);
 
     // From the diagram, sensor assumes 45 degree mounting. Rotate it.
@@ -232,7 +232,9 @@ public:
     dx = -sin(angle + 45 * M_PI/180) * mag;
     dy = cos(angle + 45 * M_PI/180) * mag;
   }
-  
+    float emwa(float &acc, float in) {
+      acc = (acc*(ACCEL_EMWA-1)+in)/ACCEL_EMWA;
+    }  
 };
 
 
