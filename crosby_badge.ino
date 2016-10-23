@@ -263,14 +263,15 @@ Accel accel = Accel();
 
 class Demo {
 public:
-  virtual void setup() = 0;
+  virtual void setup() {};
+  virtual void activate() {};
+  virtual void deactivate() {};
   virtual void loop() = 0;
 };
 
 // Show clock, accel, and switch parameters.
 class OrientationDemo : public Demo {
 public:
-  virtual void setup() {};
   virtual void loop() {
     const uint32_t now = millis();
 
@@ -321,9 +322,13 @@ public:
   Slider(uint8_t minVal, uint8_t maxVal, uint8_t currentVal, boolean wrap) {
     this->minVal = minVal << 8;
     this->maxVal = (maxVal << 8) + 255;
-    this->currentVal = currentVal<<8 + 128;
     this->wrap = wrap;
+    this->set(currentVal);
   }
+  void set(uint8_t currentVal) {
+    this->currentVal = currentVal<<8 + 128;
+  }
+
   // delta is a fixedpoint with 8 fractional bits.
   void accountForDelta(int delta) {
     int maxChange = maxVal-minVal;
@@ -348,7 +353,9 @@ public:
 class PickBrightness : public Demo {
   Slider brightness = Slider(2,255,board.brightness,false);
 public:
-  virtual void setup() {};
+  virtual void activate() {
+    brightness.set(board.brightness);
+    };
   virtual void loop() {
     //board.setBits(0,board.brightness,255,255,255);
     brightness.accountForDelta(accel.dy*64);
@@ -392,10 +399,14 @@ public:
 void setup() {
     for (int i = 0 ; i < demo_size ; i++)
       demos[i]->setup();
+    demos[current].activate();
   }
   void loop() {
-     if (button.wasMediumPress())
+     if (button.wasMediumPress()) {
+     demos[current].activate();
      current++;
+     demos[current].deactivate();
+     }
      if (current == demo_size)
        current = 0;    
      demos[current]->loop();
