@@ -19,8 +19,8 @@ class Pixel {
   /** Blend the new value in with the fraction specified 0-256*/
 public:
   uint8_t v;
-  void blend(int _v, int frac) {
-    *this = (v*(256-frac)+(_v*frac))/256;
+  void blend(int _new, int frac) {
+    *this = (v*(255-frac)+(_new*frac))/255;
   };
   uint8_t operator=(int in) {
     v = in;
@@ -69,8 +69,9 @@ public:
     // Drawing in matrix.
     Serial1.begin( 230400 );
   }
-  
+    
   Color *cell(int x, int y) {
+    isChanged = true;
     if (x < 0 || x > 7) return color;
     if (y < 0 || y > 7) return color;
     return color+8*x+y;
@@ -83,32 +84,48 @@ public:
     }
   }
   void clearRow(int row, int r, int g, int b) {
-    isChanged = true;
     for (int i = 0 ; i < LED_COUNT ; i++) {
       cell(row,i)->set(r,g,b);    
     }
   }
 
   void set(int x, int y, int r, int g, int b) {
-    isChanged = true;
     cell(x,y)->set(r,g,b);
   }
 
   void blend(int x, int y, int r, int g, int b, int blend) {
-    isChanged = true;
     cell(x,y)->blend(r,g,b,blend);
   }
 
-  void setBits(int row, uint8_t val, int r, int g, int b) {
-    isChanged = true;
+  void setRow(int row, uint8_t val, int r, int g, int b) {
     for (int ii = 0 ; ii < 8 ; ii++) {
       int mask = 1 << ii;
       if ((val & mask) != 0)
 	cell(row,ii)->set(r,g,b);
     }
   }
-
-
+  void setCol(int col, uint8_t val, int r, int g, int b) {
+    for (int ii = 0 ; ii < 8 ; ii++) {
+      int mask = 1 << ii;
+      if ((val & mask) != 0)
+  cell(ii,col)->set(r,g,b);
+    }
+  }
+  
+  void blendRow(int row, uint8_t val, int r, int g, int b, int frac) {
+    for (int ii = 0 ; ii < 8 ; ii++) {
+      int mask = 1 << ii;
+      if ((val & mask) != 0)
+  cell(row,ii)->blend(r,g,b,frac);
+    }
+  }
+  void blendCol(int col, uint8_t val, int r, int g, int b, int frac) {
+    for (int ii = 0 ; ii < 8 ; ii++) {
+      int mask = 1 << ii;
+      if ((val & mask) != 0)
+  cell(ii,col)->blend(r,g,b,frac);
+    }
+  }
   void draw(boolean force) {
     const uint32_t now = millis();
     if (!force && (!isChanged || now-last_draw < 40))
@@ -298,7 +315,7 @@ public:
     const uint32_t now = millis();
 
     board.clear(0,0,16);
-    board.setBits(0,now >> 9,0,0,254); 
+    board.setRow(0,now >> 9,0,0,254); 
     //board.set(5,5,255,0,0);
     //board.set(6,6,0,255,0);
     //board.set(7,7,0,0,255);
@@ -306,7 +323,7 @@ public:
     showAccelNicely(2,8*accel.ex);
     showAccelNicely(3,8*accel.ey);
     showAccelNicely(4,8*accel.ez);
-    board.setBits(5,board.brightness,255,255,255);
+    board.setRow(5,board.brightness,255,255,255);
     showAccelNicely(6,8*accel.dx);
     showAccelNicely(7,8*accel.dy);
 
@@ -319,7 +336,7 @@ public:
     else
       board.set(1,1,128,255,128);
 
-    board.setBits(1,(button.durationDown>>6)<<2,255,255,255); 
+    board.setRow(1,(button.durationDown>>6)<<2,255,255,255); 
 
     
   }  
@@ -327,9 +344,9 @@ public:
 
   void showAccelNicely(int col, float accel) {
     if (accel > 0)
-      board.setBits(col,accel,0,255,0);
+      board.setRow(col,accel,0,255,0);
     else
-      board.setBits(col,-accel,255,0,0);
+      board.setRow(col,-accel,255,0,0);
   }
 };
 
@@ -380,14 +397,14 @@ public:
     };
   virtual void loop() {
     board.clear(0,0,0);
-    board.setBits(0,board.brightness,255,255,255);
-    board.setBits(1,0xf,255,0,0);
-    board.setBits(2,0xf,0,255,0);
-    board.setBits(3,0xf,0,0,255);
-    board.setBits(4,0xff,255,255,255);
-    board.setBits(5,0xff,255,255,255);
-    board.setBits(6,0xff,255,255,255);
-    board.setBits(7,0xff,255,255,255);
+    board.setRow(0,board.brightness,255,255,255);
+    board.setRow(1,0xf,255,0,0);
+    board.setRow(2,0xf,0,255,0);
+    board.setRow(3,0xf,0,0,255);
+    board.setRow(4,0xff,255,255,255);
+    board.setRow(5,0xff,255,255,255);
+    board.setRow(6,0xff,255,255,255);
+    board.setRow(7,0xff,255,255,255);
     if (abs(accel.dy*8)>12)
        brightness.accountForDelta(accel.dy*16);
     board.setBrightness(brightness.value());
@@ -399,7 +416,6 @@ class PickColor : public Demo {
   Slider gSlider = Slider(1,255,85,false);
   Slider bSlider = Slider(1,255,85,false);
 public:
-  virtual void setup() {};
   virtual void loop() {
     if (abs(accel.dx*8)>12) // Give a dead zone.
     gSlider.accountForDelta(accel.dx*8);
@@ -412,20 +428,64 @@ public:
     board.clearRow(0,64,64,64);
     board.clearRow(1,64,64,64);
     board.clearRow(2,64,64,64);
-    board.setBits(0,r,255,0,0);
-    board.setBits(1,g,0,255,0);
-    board.setBits(2,b,0,0,255);
-    board.setBits(3,0b11110000,255,255,255);
-    board.setBits(3,0b11110000,r,g,b);
+    board.setRow(0,r,255,0,0);
+    board.setRow(1,g,0,255,0);
+    board.setRow(2,b,0,0,255);
+    board.setRow(3,0b11110000,255,255,255);
+    board.setRow(3,0b11110000,r,g,b);
     
 
   }
 };
 
+class OrangeStripes : public Demo {
+  virtual void loop() {
+    int clock = millis()>>7;
+    int tick = clock%48;
+
+    for (int i = 0 ; i < 8 ; i++) 
+       board.blendRow(i,0xff,0,0,0,10);
+
+    int stripe;
+
+    if (tick < 8) { // From 0-7.
+       rowOrange(tick);
+    } else if (tick >=12 && tick < 24) {
+
+  board.setRow(0,0b00001000,10,190,40);
+  board.setRow(1,0b00011000,10,190,40);
+  board.setRow(2,0b00111100,178,60,0);
+  board.setRow(3,0b01111110,178,60,0);
+  board.setRow(4,0b01111110,178,60,0);
+  board.setRow(5,0b01111110,178,60,0);
+  board.setRow(6,0b00111100,178,60,0);
+  board.setRow(7,0b00000000,178,60,0);
+  
+  board.setRow(2,0b00100100,120,40,0);
+  board.setRow(3,0b01000010,120,40,0);
+  board.setRow(4,0b01000010,120,40,0);
+  board.setRow(5,0b01000010,120,40,0);
+  board.setRow(6,0b00100100,168,60,0);
+  
+    } else if (tick >= 36 && tick < 44) {
+       colOrange(tick-36);
+    }
+
+  }
+  void rowOrange(int row) {
+      board.setRow(row,0xff,178,60,0);
+  }
+  void colOrange(int col) {
+      board.setCol(col,0xff,178,60,0);
+  }
+};
+
+
+OrangeStripes demo4;
   OrientationDemo demo1;
   PickBrightness demo2;
   PickColor demo3;
-  Demo *demos[] = {&demo1, 
+  Demo *demos[] = {&demo4, &demo1, 
   &demo2, 
   &demo3};
   int demo_size = sizeof(demos)/sizeof(*demos);
@@ -441,10 +501,10 @@ void setup() {
   void loop() {
      if (button.inMediumPress()) {
       // TODO: SHould have functionality to save state and restor.
-      board.clear(millis(),0,0);
+      board.clear(millis()&0xff,0,0);
       return;
      }
-      board.clear(0,millis(),0);
+      //board.clear(0,millis(),0);
 
      if (button.wasMediumPress()) {
      demos[current]->deactivate();
