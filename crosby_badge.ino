@@ -108,7 +108,7 @@ public:
     for (int ii = 0 ; ii < 8 ; ii++) {
       int mask = 1 << ii;
       if ((val & mask) != 0)
-  cell(ii,col)->set(r,g,b);
+	cell(ii,col)->set(r,g,b);
     }
   }
   
@@ -116,14 +116,14 @@ public:
     for (int ii = 0 ; ii < 8 ; ii++) {
       int mask = 1 << ii;
       if ((val & mask) != 0)
-  cell(row,ii)->blend(r,g,b,frac);
+	cell(row,ii)->blend(r,g,b,frac);
     }
   }
   void blendCol(int col, uint8_t val, int r, int g, int b, int frac) {
     for (int ii = 0 ; ii < 8 ; ii++) {
       int mask = 1 << ii;
       if ((val & mask) != 0)
-  cell(ii,col)->blend(r,g,b,frac);
+	cell(ii,col)->blend(r,g,b,frac);
     }
   }
   void draw(boolean force) {
@@ -194,12 +194,12 @@ public:
     return nowDown && durationDown > CLICK && durationDown < SHORT_PRESS;
   }
 
-boolean inMediumPress() {
-      return nowDown && durationDown > SHORT_PRESS && durationDown < MEDIUM_PRESS;
-}
-boolean inLongPress() {
+  boolean inMediumPress() {
+    return nowDown && durationDown > SHORT_PRESS && durationDown < MEDIUM_PRESS;
+  }
+  boolean inLongPress() {
     return nowDown && durationDown > MEDIUM_PRESS;
-}
+  }
 
   boolean wasClick() {
     return justCameUp && durationDown < CLICK;
@@ -208,12 +208,12 @@ boolean inLongPress() {
   boolean wasShortPress() {
     return justCameUp && durationDown > CLICK && durationDown < SHORT_PRESS;
   }
-boolean wasMediumPress() {
+  boolean wasMediumPress() {
     return justCameUp && durationDown > SHORT_PRESS && durationDown < MEDIUM_PRESS;
-}
-boolean wasLongPress() {
-  return justCameUp && durationDown > MEDIUM_PRESS;
-}
+  }
+  boolean wasLongPress() {
+    return justCameUp && durationDown > MEDIUM_PRESS;
+  }
   
 
 private:
@@ -234,18 +234,18 @@ class AccelRaw {
     this->z = z;
   }
 };
-  class AccelEMWA {
-    //const float ACCEL_EMWA = (1<<4);
-    float x, y, z;
-    void update(float x,float y,float z) {
-      emwa(this->x,x);
-      emwa(this->y,y);
-      emwa(this->z,z);
-    }
-    float emwa(float &acc, float in) {
-      acc = (acc*(ACCEL_EMWA-1)+in)/ACCEL_EMWA;
-    }
-  };
+class AccelEMWA {
+  //const float ACCEL_EMWA = (1<<4);
+  float x, y, z;
+  void update(float x,float y,float z) {
+    emwa(this->x,x);
+    emwa(this->y,y);
+    emwa(this->z,z);
+  }
+  float emwa(float &acc, float in) {
+    acc = (acc*(ACCEL_EMWA-1)+in)/ACCEL_EMWA;
+  }
+};
 
 class Accel {
   MMA8653 chip;
@@ -287,9 +287,9 @@ public:
     dx = -sin(angle + 45 * M_PI/180) * mag;
     dy = cos(angle + 45 * M_PI/180) * mag;
   }
-    float emwa(float &acc, float in) {
-      acc = (acc*(ACCEL_EMWA-1)+in)/ACCEL_EMWA;
-    }  
+  float emwa(float &acc, float in) {
+    acc = (acc*(ACCEL_EMWA-1)+in)/ACCEL_EMWA;
+  }  
 };
 
 
@@ -394,7 +394,7 @@ class PickBrightness : public Demo {
 public:
   virtual void activate() {
     brightness.set(board.brightness);
-    };
+  };
   virtual void loop() {
     board.clear(0,0,0);
     board.setRow(0,board.brightness,255,255,255);
@@ -406,7 +406,7 @@ public:
     board.setRow(6,0xff,255,255,255);
     board.setRow(7,0xff,255,255,255);
     if (abs(accel.dy*8)>12)
-       brightness.accountForDelta(accel.dy*16);
+      brightness.accountForDelta(accel.dy*16);
     board.setBrightness(brightness.value());
   }
 };
@@ -418,9 +418,9 @@ class PickColor : public Demo {
 public:
   virtual void loop() {
     if (abs(accel.dx*8)>12) // Give a dead zone.
-    gSlider.accountForDelta(accel.dx*8);
+      gSlider.accountForDelta(accel.dx*8);
     if (abs(accel.dy*8)>12) // Give a dead zone.
-    bSlider.accountForDelta(accel.dy*8);
+      bSlider.accountForDelta(accel.dy*8);
     int b = bSlider.value();
     int g = gSlider.value();
     int r = max(0,256-g-b);
@@ -444,81 +444,81 @@ class OrangeStripes : public Demo {
     int tick = clock%48;
 
     for (int i = 0 ; i < 8 ; i++) 
-       board.blendRow(i,0xff,0,0,0,10);
+      board.blendRow(i,0xff,0,0,0,10);
 
     int stripe;
 
     if (tick < 8) { // From 0-7.
-       rowOrange(tick);
+      rowOrange(tick);
     } else if (tick >=12 && tick < 24) {
 
-  board.setRow(0,0b00001000,10,190,40);
-  board.setRow(1,0b00011000,10,190,40);
-  board.setRow(2,0b00111100,178,60,0);
-  board.setRow(3,0b01111110,178,60,0);
-  board.setRow(4,0b01111110,178,60,0);
-  board.setRow(5,0b01111110,178,60,0);
-  board.setRow(6,0b00111100,178,60,0);
-  board.setRow(7,0b00000000,178,60,0);
+      board.setRow(0,0b00001000,10,190,40);
+      board.setRow(1,0b00011000,10,190,40);
+      board.setRow(2,0b00111100,178,60,0);
+      board.setRow(3,0b01111110,178,60,0);
+      board.setRow(4,0b01111110,178,60,0);
+      board.setRow(5,0b01111110,178,60,0);
+      board.setRow(6,0b00111100,178,60,0);
+      board.setRow(7,0b00000000,178,60,0);
   
-  board.setRow(2,0b00100100,120,40,0);
-  board.setRow(3,0b01000010,120,40,0);
-  board.setRow(4,0b01000010,120,40,0);
-  board.setRow(5,0b01000010,120,40,0);
-  board.setRow(6,0b00100100,168,60,0);
+      board.setRow(2,0b00100100,120,40,0);
+      board.setRow(3,0b01000010,120,40,0);
+      board.setRow(4,0b01000010,120,40,0);
+      board.setRow(5,0b01000010,120,40,0);
+      board.setRow(6,0b00100100,168,60,0);
   
     } else if (tick >= 36 && tick < 44) {
-       colOrange(tick-36);
+      colOrange(tick-36);
     }
 
   }
   void rowOrange(int row) {
-      board.setRow(row,0xff,178,60,0);
+    board.setRow(row,0xff,178,60,0);
   }
   void colOrange(int col) {
-      board.setCol(col,0xff,178,60,0);
+    board.setCol(col,0xff,178,60,0);
   }
 };
 
 
 OrangeStripes demo4;
-  OrientationDemo demo1;
-  PickBrightness demo2;
-  PickColor demo3;
-  Demo *demos[] = {&demo4, &demo1, 
-  &demo2, 
-  &demo3};
-  int demo_size = sizeof(demos)/sizeof(*demos);
+OrientationDemo demo1;
+PickBrightness demo2;
+PickColor demo3;
+Demo *demos[] = {&demo4, &demo1, 
+		 &demo2, 
+		 &demo3};
+int demo_size = sizeof(demos)/sizeof(*demos);
 
 class DemoPicker {
   int current = 0;
 public:
-void setup() {
+  void setup() {
     for (int i = 0 ; i < demo_size ; i++)
       demos[i]->setup();
     demos[current]->activate();
   }
   void loop() {
-     if (button.inMediumPress()) {
+    if (button.inMediumPress()) {
       // TODO: SHould have functionality to save state and restor.
       board.clear(millis()&0xff,0,0);
       return;
-     }
-      //board.clear(0,millis(),0);
+    }
+    //board.clear(0,millis(),0);
 
-     if (button.wasMediumPress()) {
-     demos[current]->deactivate();
+    if (button.wasMediumPress()) {
+      demos[current]->deactivate();
       Serial.print("Switch Demo\r\n");
       Serial.flush();
-     current++;
+      current++;
      
-     if (current == demo_size)
-       current = 0;    
-     demos[current]->activate();
-     }
-          demos[current]->loop();
+      if (current == demo_size)
+	current = 0;    
+      demos[current]->activate();
+    }
+    demos[current]->loop();
 
-     }
+  }
 };
 
 
@@ -553,10 +553,10 @@ void loop() {
   accel.loop();
   button.loop();
   if (false) {
-     orientationDemo.loop();
-     pickBrightness.loop();
+    orientationDemo.loop();
+    pickBrightness.loop();
   } else {
-  picker.loop();
+    picker.loop();
   }
   board.draw(false);
   delay(10);
